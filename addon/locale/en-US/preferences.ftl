@@ -1,0 +1,9 @@
+pref-title = lpcteam-translate Settings
+pref-auto-translate =
+    .label = Auto-translate on text selection
+pref-source-language = Source language
+pref-target-language = Target language
+pref-prompt = Translation prompt (placeholders: ${langFrom}, ${langTo}, ${sourceText})
+pref-endpoints = Translation endpoints (OpenAI-compatible; URL must include the full /chat/completions path)
+pref-endpoint-add = + Add endpoint
+pref-help = { $name } Build { $version } { $time }

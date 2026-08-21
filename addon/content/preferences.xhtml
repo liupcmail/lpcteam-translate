@@ -1,0 +1,70 @@
+<linkset>
+  <html:link rel="localization" href="__addonRef__-preferences.ftl" />
+</linkset>
+<groupbox
+  onload="Zotero.__addonInstance__.hooks.onPrefsEvent('load', { window })"
+>
+  <label><html:h2 data-l10n-id="pref-title"></html:h2></label>
+
+  <checkbox
+    id="zotero-prefpane-__addonRef__-auto-translate"
+    data-l10n-id="pref-auto-translate"
+  />
+
+  <hbox align="center" style="gap: 8px; margin-bottom: 8px">
+    <html:label
+      for="zotero-prefpane-__addonRef__-source-language"
+      data-l10n-id="pref-source-language"
+    ></html:label>
+    <html:input
+      type="text"
+      id="zotero-prefpane-__addonRef__-source-language"
+      style="width: 100px"
+    />
+    <html:label
+      for="zotero-prefpane-__addonRef__-target-language"
+      data-l10n-id="pref-target-language"
+    ></html:label>
+    <html:input
+      type="text"
+      id="zotero-prefpane-__addonRef__-target-language"
+      style="width: 100px"
+    />
+  </hbox>
+
+  <html:div
+    style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px"
+  >
+    <html:label data-l10n-id="pref-prompt"></html:label>
+    <html:textarea
+      id="zotero-prefpane-__addonRef__-prompt"
+      style="width: 100%; height: 90px; font-size: 12px"
+    ></html:textarea>
+  </html:div>
+
+  <html:div style="display: flex; flex-direction: column; gap: 6px">
+    <html:label data-l10n-id="pref-endpoints"></html:label>
+    <html:div
+      id="zotero-prefpane-__addonRef__-endpoint-rows"
+      style="display: flex; flex-direction: column; gap: 6px"
+    ></html:div>
+    <html:button
+      id="zotero-prefpane-__addonRef__-endpoint-add"
+      data-l10n-id="pref-endpoint-add"
+      style="align-self: flex-start"
+    ></html:button>
+  </html:div>
+
+  <html:style>
+    .endpoint-row { display: flex; gap: 6px; align-items: center; flex-wrap:
+    wrap; } .endpoint-field { display: flex; flex-direction: column; gap: 2px;
+    font-size: 12px; } .endpoint-field input { width: 200px; } .endpoint-field
+    span { color: #666; } .endpoint-delete { padding: 2px 8px; }
+  </html:style>
+</groupbox>
+<vbox>
+  <html:label
+    data-l10n-id="pref-help"
+    data-l10n-args='{"time": "__buildTime__","name": "__addonName__","version":"__buildVersion__"}'
+  ></html:label>
+</vbox>

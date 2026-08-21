@@ -1,0 +1,12 @@
+prefs-title = lpcteam-translate 翻译
+menu-reader-translate = 翻译选中文字（lpcteam）
+menu-item-title = 翻译条目标题（lpcteam）
+menu-item-abstract = 翻译条目摘要（lpcteam）
+progress-no-selection = 请先在阅读器中选中要翻译的文字
+progress-no-items = 所选条目没有可翻译的内容
+progress-copied = 已复制到剪贴板
+sidebar-title = 翻译
+sidebar-hint = 在阅读器中选中文字后自动翻译
+sidebar-copy = 复制
+sidebar-retranslate = 重译
+sidebar-auto-off = 自动翻译已关闭，点击“重译”手动翻译

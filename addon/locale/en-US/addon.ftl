@@ -1,0 +1,12 @@
+prefs-title = lpcteam-translate
+menu-reader-translate = Translate Selection (lpcteam)
+menu-item-title = Translate Item Titles (lpcteam)
+menu-item-abstract = Translate Item Abstracts (lpcteam)
+progress-no-selection = Select some text in the reader first
+progress-no-items = Nothing translatable in the selected items
+progress-copied = Copied to clipboard
+sidebar-title = Translate
+sidebar-hint = Select text in the reader to translate automatically
+sidebar-copy = Copy
+sidebar-retranslate = Retry
+sidebar-auto-off = Auto-translate is off; click Retry to translate manually

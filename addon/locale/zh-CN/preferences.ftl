@@ -1,0 +1,9 @@
+pref-title = lpcteam-translate 设置
+pref-auto-translate =
+    .label = 选中文字后自动翻译
+pref-source-language = 源语言
+pref-target-language = 目标语言
+pref-prompt = 翻译提示词（可用占位符：${langFrom}、${langTo}、${sourceText}）
+pref-endpoints = 翻译端点（OpenAI 兼容接口，URL 需含完整 /chat/completions 路径）
+pref-endpoint-add = + 添加端点
+pref-help = { $name } Build { $version } { $time }

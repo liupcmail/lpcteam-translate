@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<window
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+  xmlns:html="http://www.w3.org/1999/xhtml"
+  title="lpcteam-translate"
+  windowtype="lpcteamtranslate:translateWindow"
+  persist="screenX screenY width height"
+  width="560"
+  height="480"
+  resizable="true"
+>
+  <html:style>
+    <![CDATA[ :root { font: -apple-system, 13px sans-serif; } #engine-bar {
+    display: flex; align-items: center; gap: 8px; padding: 8px; } #engine-bar
+    label { color: #555; } #copy-btn, #close-btn { cursor: pointer; } #entries {
+    overflow-y: auto; padding: 0 12px 12px 12px; display: flex; flex-direction:
+    column; gap: 12px; } .entry .source { color: #666; white-space: pre-wrap;
+    padding: 4px 8px; background: rgba(128, 128, 128, 0.08); border-radius: 4px;
+    max-height: 110px; overflow-y: auto; } .entry .result { font-size: 14px;
+    white-space: pre-wrap; padding: 4px 8px; min-height: 22px; border-left: 3px
+    solid #38a169; background: rgba(56, 161, 105, 0.06); border-radius: 2px; }
+    .entry .result.error { border-left-color: #c53030; background: rgba(197, 48,
+    48, 0.06); color: #c53030; } .entry .result.pending { border-left-color:
+    #b7791f; color: #b7791f; } ]]>
+  </html:style>
+  <hbox id="engine-bar">
+    <label value="Engine:" />
+    <menulist id="engine-selector" sizetopopup="none">
+      <menupopup id="engine-popup" />
+    </menulist>
+    <spacer flex="1" />
+    <button id="copy-btn" label="Copy all" />
+    <button id="close-btn" label="Close" />
+  </hbox>
+  <vbox id="entries" flex="1" />
+</window>
