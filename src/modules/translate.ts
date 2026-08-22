@@ -4,10 +4,10 @@ import type { EndpointConfig } from "./services";
 export class TranslateError extends Error {}
 
 /**
- * Translate `text` with an OpenAI-compatible endpoint.
+ * Translate `text` with the given engine.
  *
  * When `onDelta` is provided it is called with each incremental chunk
- * of the translation (streaming mode only); the resolved value is the
+ * of the translation (streaming LLM only); the resolved value is the
  * complete translation.
  */
 export async function translateText(
@@ -18,6 +18,86 @@ export async function translateText(
   if (!endpoint) {
     throw new TranslateError("No endpoint available");
   }
+  if (endpoint.type === "bing") {
+    return translateBing(text, onDelta);
+  }
+  if (endpoint.type === "google") {
+    return translateGoogle(text, onDelta);
+  }
+  return translateLLM(text, endpoint, onDelta);
+}
+
+/**
+ * Free Bing translator (same web endpoint as Translate for Zotero):
+ * POST edge.microsoft.com/translate/translatetext with an Edge UA.
+ */
+async function translateBing(
+  text: string,
+  onDelta?: (delta: string, full: string) => void,
+): Promise<string> {
+  const from = getPref("sourceLanguage") || "en";
+  const to = getPref("targetLanguage") || "zh-CN";
+  const xhr = await Zotero.HTTP.request(
+    "POST",
+    `https://edge.microsoft.com/translate/translatetext?from=${from}&to=${to}&isEnterpriseClient=false`,
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.1774.42",
+      },
+      body: JSON.stringify([text]),
+      responseType: "json",
+    },
+  );
+  if (xhr.status !== 200) {
+    throw new TranslateError(`Bing HTTP ${xhr.status}`);
+  }
+  const result = (xhr.response as any)?.[0]?.translations?.[0]?.text || "";
+  if (!result) {
+    throw new TranslateError("Bing returned an empty translation");
+  }
+  onDelta?.(result, result);
+  return result;
+}
+
+/**
+ * Free Google translate web endpoint. Auto-detects the source
+ * language.
+ */
+async function translateGoogle(
+  text: string,
+  onDelta?: (delta: string, full: string) => void,
+): Promise<string> {
+  const to = getPref("targetLanguage") || "zh-CN";
+  const url =
+    "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto" +
+    `&tl=${encodeURIComponent(to)}&dt=t&q=${encodeURIComponent(text)}`;
+  const xhr = await Zotero.HTTP.request("GET", url, {
+    responseType: "json",
+  });
+  if (xhr.status !== 200) {
+    throw new TranslateError(`Google HTTP ${xhr.status}`);
+  }
+  const segments = (xhr.response as any)?.[0];
+  let result = "";
+  if (Array.isArray(segments)) {
+    for (const seg of segments) {
+      result += seg?.[0] || "";
+    }
+  }
+  if (!result) {
+    throw new TranslateError("Google returned an empty translation");
+  }
+  onDelta?.(result, result);
+  return result;
+}
+
+async function translateLLM(
+  text: string,
+  endpoint: EndpointConfig,
+  onDelta?: (delta: string, full: string) => void,
+): Promise<string> {
   if (!endpoint.apiKey) {
     throw new TranslateError(
       `Endpoint "${endpoint.name}" has no API key. Set it in the plugin preferences.`,

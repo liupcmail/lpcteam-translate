@@ -3,12 +3,14 @@ import { translateText } from "./translate";
 
 interface WindowEntry {
   source: string;
-  element: HTMLElement;
+  sourceEl: HTMLElement;
+  resultEl: HTMLElement;
 }
 
 /**
- * The translate result window. One shared instance: reusing it keeps
- * the engine selection and window position across translations.
+ * The translate result window: two side-by-side panes with a draggable
+ * splitter (original left, translation right), engine selector on top.
+ * One shared instance keeps engine selection and position.
  */
 let activeWindow: Window | undefined;
 
@@ -37,7 +39,7 @@ export function openTranslateWindow(): Promise<Window> {
 
 function initWindowUI(win: Window) {
   const doc = win.document;
-  (win as any)._lpcteamEntries = [];
+  (win as any)._lpcteamEntries = [] as WindowEntry[];
 
   const selector = doc.getElementById("engine-selector") as any;
   const popup = doc.getElementById("engine-popup")!;
@@ -66,13 +68,42 @@ function initWindowUI(win: Window) {
   doc.getElementById("copy-btn")!.addEventListener("command", () => {
     const entries: WindowEntry[] = (win as any)._lpcteamEntries || [];
     const text = entries
-      .map((e) => e.element.querySelector(".result")?.textContent || "")
+      .map((e) => e.resultEl.textContent || "")
       .filter(Boolean)
       .join("\n\n");
     Zotero.Utilities.Internal.copyTextToClipboard(text);
     new ztoolkit.ProgressWindow(addon.data.config.addonName)
       .createLine({ text: "Copied", progress: 100 })
       .show();
+  });
+
+  initSplitter(win);
+}
+
+/**
+ * Drag the vertical splitter to resize the two panes.
+ */
+function initSplitter(win: Window) {
+  const doc = win.document;
+  const splitter = doc.getElementById("splitter")!;
+  const sourcePane = doc.getElementById("source-pane") as HTMLElement;
+  const panes = doc.getElementById("panes") as HTMLElement;
+  splitter.addEventListener("mousedown", (e: MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = sourcePane.getBoundingClientRect().width;
+    const total = panes.getBoundingClientRect().width;
+    const onMove = (ev: MouseEvent) => {
+      const pct = ((startWidth + ev.clientX - startX) / total) * 100;
+      const clamped = Math.min(80, Math.max(15, pct));
+      sourcePane.style.flexBasis = `${clamped}%`;
+    };
+    const onUp = () => {
+      doc.removeEventListener("mousemove", onMove);
+      doc.removeEventListener("mouseup", onUp);
+    };
+    doc.addEventListener("mousemove", onMove);
+    doc.addEventListener("mouseup", onUp);
   });
 }
 
@@ -88,26 +119,31 @@ export async function addEntryAndTranslate(
   const doc = win.document;
   const entries: WindowEntry[] = (win as any)._lpcteamEntries || [];
 
-  const entry = doc.createElement("div");
-  entry.className = "entry";
+  const sourceBlock = doc.createElement("div");
+  sourceBlock.className = "entry";
   const sourceEl = doc.createElement("div");
   sourceEl.className = "source";
   sourceEl.textContent = source;
+  sourceBlock.appendChild(sourceEl);
+  doc.getElementById("source-pane")!.appendChild(sourceBlock);
+
+  const resultBlock = doc.createElement("div");
+  resultBlock.className = "entry";
   const resultEl = doc.createElement("div");
   resultEl.className = "result pending";
   resultEl.textContent = "…";
-  entry.append(sourceEl, resultEl);
-  doc.getElementById("entries")!.appendChild(entry);
+  resultBlock.appendChild(resultEl);
+  doc.getElementById("result-pane")!.appendChild(resultBlock);
 
-  const windowEntry = { source, element: entry };
-  entries.push(windowEntry);
+  const entry: WindowEntry = { source, sourceEl, resultEl };
+  entries.push(entry);
   (win as any)._lpcteamEntries = entries;
 
   const name =
     engineName ||
     (doc.getElementById("engine-selector") as any)?.value ||
     getDefaultEndpoint()?.name;
-  await translateEntry(win, windowEntry, name);
+  await translateEntry(win, entry, name);
 }
 
 async function translateEntry(
@@ -115,7 +151,7 @@ async function translateEntry(
   entry: WindowEntry,
   engineName?: string,
 ) {
-  const resultEl = entry.element.querySelector(".result") as HTMLElement;
+  const resultEl = entry.resultEl;
   if (win.closed) {
     return;
   }

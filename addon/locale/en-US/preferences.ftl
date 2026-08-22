@@ -4,6 +4,6 @@ pref-auto-translate =
 pref-source-language = Source language
 pref-target-language = Target language
 pref-prompt = Translation prompt (placeholders: ${langFrom}, ${langTo}, ${sourceText})
-pref-endpoints = Translation endpoints (OpenAI-compatible; URL must include the full /chat/completions path)
+pref-endpoints = LLM endpoints (OpenAI-compatible; URL must include the full /chat/completions path). Bing and Google free engines are built in — no configuration needed.
 pref-endpoint-add = + Add endpoint
 pref-help = { $name } Build { $version } { $time }

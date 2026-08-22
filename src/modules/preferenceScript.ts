@@ -1,5 +1,9 @@
 import { getPref, setPref } from "../utils/prefs";
-import { getEndpoints, setEndpoints, type EndpointConfig } from "./services";
+import {
+  getCustomEndpoints,
+  setEndpoints,
+  type EndpointConfig,
+} from "./services";
 
 export async function registerPrefsScripts(win: Window) {
   bindSimpleInputs(win);
@@ -70,13 +74,13 @@ function renderEndpointRows(win: Window) {
   }
   container.innerHTML = "";
 
-  const endpoints = getEndpoints();
+  const endpoints = getCustomEndpoints();
   endpoints.forEach((ep, index) => {
     const row = doc.createElement("div");
     row.className = "endpoint-row";
 
     const fields: Array<{
-      key: keyof EndpointConfig;
+      key: "name" | "url" | "model" | "apiKey";
       label: string;
       type: string;
     }> = [
@@ -94,7 +98,7 @@ function renderEndpointRows(win: Window) {
       input.type = field.type;
       input.value = ep[field.key] || "";
       input.addEventListener("change", () => {
-        const current = getEndpoints();
+        const current = getCustomEndpoints();
         current[index][field.key] = input.value;
         setEndpoints(current);
       });
@@ -105,7 +109,7 @@ function renderEndpointRows(win: Window) {
     del.textContent = "✕";
     del.className = "endpoint-delete";
     del.addEventListener("command", () => {
-      const current = getEndpoints();
+      const current = getCustomEndpoints();
       current.splice(index, 1);
       setEndpoints(current);
       renderEndpointRows(win);
@@ -115,12 +119,13 @@ function renderEndpointRows(win: Window) {
   });
 
   addButton.addEventListener("click", () => {
-    const current = getEndpoints();
+    const current = getCustomEndpoints();
     current.push({
       name: `Endpoint ${current.length + 1}`,
       url: "",
       model: "",
       apiKey: "",
+      type: "llm",
     });
     setEndpoints(current);
     renderEndpointRows(win);
