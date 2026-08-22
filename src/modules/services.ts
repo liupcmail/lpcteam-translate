@@ -19,8 +19,22 @@ export interface EndpointConfig {
 }
 
 const BUILTIN_ENDPOINTS: EndpointConfig[] = [
-  { name: "必应 Bing", url: "", model: "", apiKey: "", type: "bing", builtin: true },
-  { name: "谷歌 Google", url: "", model: "", apiKey: "", type: "google", builtin: true },
+  {
+    name: "必应 Bing",
+    url: "",
+    model: "",
+    apiKey: "",
+    type: "bing",
+    builtin: true,
+  },
+  {
+    name: "谷歌 Google",
+    url: "",
+    model: "",
+    apiKey: "",
+    type: "google",
+    builtin: true,
+  },
 ];
 
 /**
@@ -58,7 +72,7 @@ export function getCustomEndpoints(): EndpointConfig[] {
  * free engines.
  */
 export function getEndpoints(): EndpointConfig[] {
-  return [...getCustomEndpoints(), ...BUILTIN_ENDPOINTS];
+  return [...BUILTIN_ENDPOINTS, ...getCustomEndpoints()];
 }
 
 export function setEndpoints(endpoints: EndpointConfig[]) {
@@ -84,6 +98,15 @@ export function getEndpointByName(name: string): EndpointConfig | undefined {
  * falls back to the free Bing engine when none is configured.
  */
 export function getDefaultEndpoint(): EndpointConfig | undefined {
+  const endpoints = getEndpoints();
+  const saved = getPref("defaultEngine") as string;
+  if (saved) {
+    const match = endpoints.find((ep) => ep.name === saved);
+    if (match) {
+      return match;
+    }
+  }
+  // no (valid) preference: first keyed LLM endpoint, else free Bing
   const custom = getCustomEndpoints();
   return custom.find((ep) => ep.apiKey) || BUILTIN_ENDPOINTS[0];
 }

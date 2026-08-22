@@ -11,6 +11,7 @@ declare namespace _ZoteroTypes {
       "targetLanguage": string;
       "stream": boolean;
       "autoTranslate": boolean;
+      "defaultEngine": string;
       "autoTargetLanguage": boolean;
       "prompt": string;
       "endpoints": string;

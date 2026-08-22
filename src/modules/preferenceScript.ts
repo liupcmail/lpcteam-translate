@@ -1,7 +1,8 @@
 import { getPref, setPref } from "../utils/prefs";
-import { getString } from "../utils/locale";
 import {
   getCustomEndpoints,
+  getDefaultEndpoint,
+  getEndpoints,
   setEndpoints,
   type EndpointConfig,
 } from "./services";
@@ -11,6 +12,7 @@ export async function registerPrefsScripts(win: Window) {
   bindSimpleInputs(win);
   bindCheckbox(win);
   bindCheckbox2(win);
+  bindDefaultEngine(win);
   renderEndpointRows(win);
 }
 
@@ -41,42 +43,80 @@ function bindCheckbox2(win: Window) {
 }
 
 /**
- * Test one endpoint with a sample text and report the result inline.
+ * Test one endpoint with a sample text and report the result inline
+ * in the row's status label.
  */
 async function testEndpoint(
   endpoint: EndpointConfig,
   statusEl: HTMLElement,
+  idleText: string,
 ) {
   statusEl.textContent = "…";
   statusEl.style.color = "#b7791f";
   try {
-    const result = await translateText("Hello, world!", endpoint);
-    statusEl.textContent = `✓ ${result.slice(0, 40)}`;
+    await translateText("Hello, world!", endpoint);
+    statusEl.textContent = "恭喜你，测试通过。";
     statusEl.style.color = "#38a169";
   } catch (e) {
-    statusEl.textContent = `✗ ${e instanceof Error ? e.message : String(e)}`.slice(0, 80);
+    ztoolkit.log("endpoint test failed", e);
+    statusEl.textContent = "无法连通，请重新配置！";
     statusEl.style.color = "#c53030";
   }
+  // restore the idle status text after a while
+  Zotero.Promise.delay(8000).then(() => {
+    statusEl.textContent = idleText;
+    statusEl.style.color = "";
+  });
+}
+
+/**
+ * Populate and bind the default-engine dropdown with every available
+ * engine (built-in free ones plus configured LLM endpoints).
+ */
+function bindDefaultEngine(win: Window) {
+  const selector = win.document.getElementById(
+    `${prefix()}-default-engine`,
+  ) as any;
+  const popup = win.document.getElementById(`${prefix()}-default-engine-popup`);
+  if (!selector || !popup) {
+    return;
+  }
+  popup.innerHTML = "";
+  const saved = (getPref("defaultEngine") as string) || "";
+  let hasSaved = false;
+  for (const ep of getEndpoints()) {
+    const item = win.document.createXULElement("menuitem");
+    item.setAttribute("label", ep.name);
+    item.setAttribute("value", ep.name);
+    popup.appendChild(item);
+    if (ep.name === saved) {
+      hasSaved = true;
+    }
+  }
+  // fall back to the effective default when nothing valid is saved
+  selector.value = hasSaved ? saved : getDefaultEndpoint()?.name || "";
+  selector.addEventListener("command", () => {
+    setPref("defaultEngine", selector.value);
+  });
 }
 
 function bindSimpleInputs(win: Window) {
-  const doc = win.document;
   bindInput(
     win,
     `${prefix()}-source-language`,
-    () => getPref("sourceLanguage"),
+    () => getPref("sourceLanguage") as string,
     (v) => setPref("sourceLanguage", v),
   );
   bindInput(
     win,
     `${prefix()}-target-language`,
-    () => getPref("targetLanguage"),
+    () => getPref("targetLanguage") as string,
     (v) => setPref("targetLanguage", v),
   );
   bindInput(
     win,
     `${prefix()}-prompt`,
-    () => getPref("prompt") || "",
+    () => (getPref("prompt") as string) || "",
     (v) => setPref("prompt", v),
   );
 }
@@ -96,9 +136,9 @@ function bindInput(
 }
 
 /**
- * Render one row (name / url / model / key + delete) per endpoint,
- * plus an "add endpoint" button. Every change is saved to the pref
- * immediately.
+ * Collapsible endpoint list: each endpoint renders as one summary row
+ * (status dot, name, config state, Test / Edit buttons); Edit expands
+ * the four input fields below it.
  */
 function renderEndpointRows(win: Window) {
   const doc = win.document;
@@ -111,8 +151,39 @@ function renderEndpointRows(win: Window) {
 
   const endpoints = getCustomEndpoints();
   endpoints.forEach((ep, index) => {
+    // ---- summary row ----
     const row = doc.createElement("div");
-    row.className = "endpoint-row";
+    row.className = "endpoint-summary";
+
+    const dot = doc.createElement("span");
+    dot.className = ep.apiKey ? "dot ok" : "dot warn";
+
+    const nameEl = doc.createElement("span");
+    nameEl.className = "endpoint-name";
+    nameEl.textContent = ep.name;
+
+    const statusEl = doc.createElement("span");
+    statusEl.className = "endpoint-status";
+    statusEl.textContent = ep.apiKey ? "已配置 ✓" : "缺密钥 ⚠";
+    if (!ep.apiKey) {
+      statusEl.style.color = "#b7791f";
+    }
+
+    const testBtn = doc.createElement("button");
+    testBtn.textContent = "连通测试";
+
+    const editBtn = doc.createElement("button");
+    editBtn.textContent = "编辑";
+
+    const spacer = doc.createElement("span");
+    spacer.style.flex = "1";
+    row.append(dot, nameEl, statusEl, spacer, testBtn, editBtn);
+    container.appendChild(row);
+
+    // ---- collapsible detail ----
+    const detail = doc.createElement("div");
+    detail.className = "endpoint-detail";
+    detail.style.display = "none";
 
     const fields: Array<{
       key: "name" | "url" | "model" | "apiKey";
@@ -124,6 +195,7 @@ function renderEndpointRows(win: Window) {
       { key: "model", label: "Model", type: "text" },
       { key: "apiKey", label: "API Key", type: "password" },
     ];
+    const inputs: HTMLInputElement[] = [];
     for (const field of fields) {
       const wrap = doc.createElement("label");
       wrap.className = "endpoint-field";
@@ -132,19 +204,47 @@ function renderEndpointRows(win: Window) {
       const input = doc.createElement("input");
       input.type = field.type;
       input.value = ep[field.key] || "";
+      inputs.push(input);
       input.addEventListener("change", () => {
         const current = getCustomEndpoints();
         current[index][field.key] = input.value;
         setEndpoints(current);
+        // keep the summary in sync
+        dot.className =
+          input.value && field.key === "apiKey" ? "dot ok" : dot.className;
+        if (field.key === "name") {
+          nameEl.textContent = input.value || "Unnamed";
+        }
+        if (field.key === "apiKey") {
+          statusEl.textContent = input.value ? "已配置 ✓" : "缺密钥 ⚠";
+          statusEl.style.color = input.value ? "" : "#b7791f";
+          dot.className = input.value ? "dot ok" : "dot warn";
+        }
       });
       wrap.append(caption, input);
-      row.appendChild(wrap);
+      detail.appendChild(wrap);
     }
-    const test = doc.createElement("button");
-    test.textContent = getString("pref-endpoint-test" as never);
-    test.addEventListener("command", () => {
-      // Read the CURRENT input values so unsaved edits are tested too
-      const inputs = Array.from(row.querySelectorAll("input")) as HTMLInputElement[];
+
+    const del = doc.createElement("button");
+    del.textContent = "✕ 删除此端点";
+    del.className = "endpoint-delete";
+    del.addEventListener("click", () => {
+      const current = getCustomEndpoints();
+      current.splice(index, 1);
+      setEndpoints(current);
+      renderEndpointRows(win);
+    });
+    detail.appendChild(del);
+    container.appendChild(detail);
+
+    // ---- wiring ----
+    editBtn.addEventListener("click", () => {
+      const open = detail.style.display !== "none";
+      detail.style.display = open ? "none" : "";
+      editBtn.textContent = open ? "编辑" : "收起";
+    });
+    testBtn.addEventListener("click", () => {
+      // test with the CURRENT input values, saved or not
       const values = inputs.map((i) => i.value);
       testEndpoint(
         {
@@ -155,28 +255,12 @@ function renderEndpointRows(win: Window) {
           type: "llm",
         },
         statusEl,
+        values[3] ? "已配置 ✓" : "缺密钥 ⚠",
       );
     });
-    row.appendChild(test);
-    const statusEl = doc.createElement("span");
-    statusEl.className = "endpoint-status";
-    statusEl.style.fontSize = "12px";
-    row.appendChild(statusEl);
-
-    const del = doc.createElement("button");
-    del.textContent = "✕";
-    del.className = "endpoint-delete";
-    del.addEventListener("command", () => {
-      const current = getCustomEndpoints();
-      current.splice(index, 1);
-      setEndpoints(current);
-      renderEndpointRows(win);
-    });
-    row.appendChild(del);
-    container.appendChild(row);
   });
 
-  addButton.addEventListener("click", () => {
+  (addButton as HTMLElement).addEventListener("click", () => {
     const current = getCustomEndpoints();
     current.push({
       name: `Endpoint ${current.length + 1}`,

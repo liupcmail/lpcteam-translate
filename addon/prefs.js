@@ -2,6 +2,7 @@ pref("sourceLanguage", "en-US");
 pref("targetLanguage", "zh-CN");
 pref("stream", true);
 pref("autoTranslate", true);
+pref("defaultEngine", "");
 pref("autoTargetLanguage", true);
 pref(
   "prompt",

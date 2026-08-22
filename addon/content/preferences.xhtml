@@ -17,6 +17,21 @@
 
   <hbox align="center" style="gap: 8px; margin-bottom: 8px">
     <html:label
+      for="zotero-prefpane-__addonRef__-default-engine"
+      data-l10n-id="pref-default-engine"
+    ></html:label>
+    <menulist
+      id="zotero-prefpane-__addonRef__-default-engine"
+      sizetopopup="none"
+    >
+      <menupopup
+        id="zotero-prefpane-__addonRef__-default-engine-popup"
+      ></menupopup>
+    </menulist>
+  </hbox>
+
+  <hbox align="center" style="gap: 8px; margin-bottom: 8px">
+    <html:label
       for="zotero-prefpane-__addonRef__-source-language"
       data-l10n-id="pref-source-language"
     ></html:label>
@@ -60,10 +75,19 @@
   </html:div>
 
   <html:style>
-    .endpoint-row { display: flex; gap: 6px; align-items: center; flex-wrap:
-    wrap; } .endpoint-field { display: flex; flex-direction: column; gap: 2px;
-    font-size: 12px; } .endpoint-field input { width: 200px; } .endpoint-field
-    span { color: #666; } .endpoint-delete { padding: 2px 8px; }
+    .endpoint-summary { display: flex; align-items: center; gap: 8px; padding:
+    5px 2px; border-bottom: 1px solid rgba(128, 128, 128, 0.12); }
+    .endpoint-summary .dot { width: 8px; height: 8px; border-radius: 50%; flex:
+    none; } .endpoint-summary .dot.ok { background: #38a169; } .endpoint-summary
+    .dot.warn { background: #b7791f; } .endpoint-summary .endpoint-name {
+    font-weight: 600; min-width: 70px; } .endpoint-summary .endpoint-status {
+    color: #38a169; font-size: 12px; } .endpoint-summary button { padding: 2px
+    10px; } .endpoint-detail { display: flex; gap: 6px; align-items: flex-end;
+    flex-wrap: wrap; padding: 8px 4px 10px 18px; margin-bottom: 6px;
+    border-left: 2px solid rgba(128, 128, 128, 0.2); } .endpoint-field {
+    display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+    .endpoint-field input { width: 200px; } .endpoint-field span { color: #666;
+    } .endpoint-delete { padding: 2px 8px; }
   </html:style>
 </groupbox>
 <vbox>

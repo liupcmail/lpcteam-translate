@@ -13,35 +13,23 @@
   resizable="true"
 >
   <html:style>
-    <![CDATA[
-      :root { font: -apple-system, 13px sans-serif; }
-      #engine-bar { display: flex; align-items: center; gap: 8px; padding: 6px 8px; }
-      #engine-bar label { color: #555; }
-      #panes { display: flex; flex: 1; min-height: 0; }
-      #source-pane {
-        flex: 0 0 46%; min-width: 120px; overflow-y: auto; padding: 8px 10px;
-        display: flex; flex-direction: column; gap: 14px;
-      }
-      #splitter {
-        flex: 0 0 4px; cursor: ew-resize; background: rgba(128,128,128,0.25);
-      }
-      #splitter:hover { background: rgba(56,161,105,0.55); }
-      #result-pane {
-        flex: 1; min-width: 120px; overflow-y: auto; padding: 8px 10px;
-        display: flex; flex-direction: column; gap: 14px;
-      }
-      .entry .source {
-        color: #666; white-space: pre-wrap; padding: 4px 8px;
-        background: rgba(128,128,128,0.08); border-radius: 4px;
-      }
-      .entry .result {
-        font-size: 14px; white-space: pre-wrap; padding: 4px 8px; min-height: 22px;
-        border-left: 3px solid #38a169; background: rgba(56,161,105,0.06);
-        border-radius: 2px;
-      }
-      .entry .result.error { border-left-color: #c53030; background: rgba(197,48,48,0.06); color: #c53030; }
-      .entry .result.pending { border-left-color: #b7791f; color: #b7791f; }
-    ]]>
+    <![CDATA[ :root { font: -apple-system, 13px sans-serif; } #engine-bar {
+    display: flex; align-items: center; gap: 8px; padding: 6px 8px; }
+    #engine-bar label { color: #555; } #panes { display: flex; flex: 1;
+    min-height: 0; } #source-pane { flex: 0 0 46%; min-width: 120px; overflow-y:
+    auto; padding: 8px 10px; display: flex; flex-direction: column; gap: 14px; }
+    #splitter { flex: 0 0 4px; cursor: ew-resize; background:
+    rgba(128,128,128,0.25); } #splitter:hover { background:
+    rgba(56,161,105,0.55); } #result-pane { flex: 1; min-width: 120px;
+    overflow-y: auto; padding: 8px 10px; display: flex; flex-direction: column;
+    gap: 14px; } .entry .source { color: #666; white-space: pre-wrap; padding:
+    4px 8px; background: rgba(128,128,128,0.08); border-radius: 4px; } .entry
+    .result { font-size: 14px; white-space: pre-wrap; padding: 4px 8px;
+    min-height: 22px; border-left: 3px solid #38a169; background:
+    rgba(56,161,105,0.06); border-radius: 2px; } .entry .result.error {
+    border-left-color: #c53030; background: rgba(197,48,48,0.06); color:
+    #c53030; } .entry .result.pending { border-left-color: #b7791f; color:
+    #b7791f; } ]]>
   </html:style>
   <hbox id="engine-bar">
     <label value="Engine:" />

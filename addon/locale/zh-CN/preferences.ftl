@@ -1,12 +1,13 @@
-pref-title = lpcteam-translate 设置
+pref-title = 设置
 pref-auto-translate =
     .label = 选中文字后自动翻译
 pref-auto-target =
     .label = 自动目标语言（中文译为英文，其他语言译为中文）
-pref-endpoint-test = 测试
+pref-endpoint-test = 连通测试
 pref-source-language = 源语言
 pref-target-language = 目标语言
 pref-prompt = 翻译提示词（可用占位符：${langFrom}、${langTo}、${sourceText}）
 pref-endpoints = LLM 翻译端点（OpenAI 兼容接口，URL 需含完整 /chat/completions 路径）。必应、谷歌免费引擎已内置，无需配置。
 pref-endpoint-add = + 添加端点
 pref-help = { $name } Build { $version } { $time }
+pref-default-engine = 默认翻译引擎

@@ -1,7 +1,7 @@
 {
   "name": "lpcteam-translate",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Translate selected text, item titles and abstracts in Zotero with your own LLM API endpoints.",
   "config": {
     "addonName": "lpcteam-translate",

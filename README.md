@@ -6,11 +6,14 @@ A minimal Zotero translation plugin powered by your own LLM API endpoints.
 
 ## Features / 功能
 
-- **Select-to-translate in the PDF/EPUB reader / 阅读器划词翻译**：选中文字后，右侧边栏的"翻译"面板自动开始翻译（流式输出）
-- **Translate item titles & abstracts / 条目标题与摘要翻译**：选中若干条文献，右键即可批量翻译
-- **Bring your own endpoints / 自带接口**：任意 OpenAI 兼容的 `/chat/completions` 端点都可以配置（DeepSeek、智谱 GLM、Kimi、OpenAI、自建网关……），密钥只存在你本机
-- **Switch engines on the fly / 引擎热切换**：面板里切换端点，当前内容立即用新引擎重译
-- Auto-translate can be turned off in preferences / 可在设置中关闭"选中即译"
+- **Select-to-translate in the PDF/EPUB reader / 阅读器划词翻译**：选中文字后，右侧边栏自动翻译（流式输出）；PDF 硬换行自动合并、连字符断词自动还原
+- **Built-in free engines / 内置免费引擎**：必应、谷歌开箱即用，无需密钥
+- **Bring your own LLM endpoints / 自定义大模型端点**：任意 OpenAI 兼容 `/chat/completions` 接口（DeepSeek、智谱 GLM、Kimi……），密钥只存本机；每端点独立"连通测试"
+- **Default engine preference / 默认引擎设置**：所有引擎任选默认
+- **Concat mode / 拼接模式**：跨页段落多次选中合并翻译
+- **Auto target language / 自动目标语言**：中文→英文，其他语言→中文
+- **Translate item titles & abstracts / 条目标题与摘要批量翻译**：右键即译，双栏对照窗口
+- Vector icons, light/dark themes, bilingual UI / 矢量图标、深浅色主题、双语界面
 
 ## Install / 安装
 

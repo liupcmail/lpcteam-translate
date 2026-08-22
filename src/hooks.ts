@@ -71,6 +71,11 @@ async function onMainWindowLoad(win: _ZoteroTypes.MainWindow): Promise<void> {
   win.MozXULElement.insertFTLIfNeeded(
     `${addon.data.config.addonRef}-mainWindow.ftl`,
   );
+  // The section header (icon + title) is localized through the
+  // window's fluent bundles, so our strings must be visible there too.
+  win.MozXULElement.insertFTLIfNeeded(
+    `${addon.data.config.addonRef}-addon.ftl`,
+  );
 
   try {
     registerReaderMenu();

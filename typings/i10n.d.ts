@@ -9,6 +9,7 @@ export type FluentMessageId =
   | 'menu-reader-translate'
   | 'pref-auto-target'
   | 'pref-auto-translate'
+  | 'pref-default-engine'
   | 'pref-endpoint-add'
   | 'pref-endpoint-test'
   | 'pref-endpoints'
@@ -22,7 +23,8 @@ export type FluentMessageId =
   | 'progress-no-items'
   | 'progress-no-selection'
   | 'sidebar-auto-off'
+  | 'sidebar-clear'
   | 'sidebar-concat'
-  | 'sidebar-copy'
   | 'sidebar-hint'
-  | 'sidebar-title';
+  | 'sidebar-placeholder'
+  | 'sidebar-result-placeholder';

@@ -1,12 +1,13 @@
-pref-title = lpcteam-translate Settings
+pref-title = Settings
 pref-auto-translate =
     .label = Auto-translate on text selection
 pref-auto-target =
     .label = Auto target language (Chinese → English, other languages → Chinese)
-pref-endpoint-test = Test
+pref-endpoint-test = Test Connection
 pref-source-language = Source language
 pref-target-language = Target language
 pref-prompt = Translation prompt (placeholders: ${langFrom}, ${langTo}, ${sourceText})
 pref-endpoints = LLM endpoints (OpenAI-compatible; URL must include the full /chat/completions path). Bing and Google free engines are built in — no configuration needed.
 pref-endpoint-add = + Add endpoint
 pref-help = { $name } Build { $version } { $time }
+pref-default-engine = Default translation engine

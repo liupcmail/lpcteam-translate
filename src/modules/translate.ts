@@ -1,6 +1,27 @@
 import { getPref } from "../utils/prefs";
 import type { EndpointConfig } from "./services";
 
+/**
+ * Normalize text selected from a PDF: hard line wraps inside a
+ * paragraph are joined back into one line, English hyphenation is
+ * restored, CJK line breaks are joined without a space, and blank
+ * lines are kept as paragraph separators.
+ */
+export function normalizeSelectionText(raw: string): string {
+  return raw
+    .replace(/\r\n?/g, "\n")
+    .replace(/-\n([a-z])/g, "$1")
+    .replace(
+      /([\u4e00-\u9fff\uff0c\u3002\uff1b\uff1a\u3001])\n([\u4e00-\u9fff])/g,
+      "$1$2",
+    )
+    .replace(/([^\n])\n([^\n])/g, "$1 $2")
+    .replace(/\n{2,}/g, "\n")
+    .replace(/[ \t]+/g, " ")
+    .replace(/ ?\n ?/g, "\n")
+    .trim();
+}
+
 export class TranslateError extends Error {}
 
 /**
