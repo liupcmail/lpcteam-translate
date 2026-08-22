@@ -32,7 +32,7 @@ export function registerSidebarPanel() {
     bodyXHTML: `<html:div
       xmlns:html="http://www.w3.org/1999/xhtml"
       id="lpcteamtranslate-sidebar-body"
-      style="display:flex;flex-direction:column;gap:6px;padding:4px 8px 8px 8px;height:260px;overflow:hidden;"
+      style="display:flex;flex-direction:column;gap:6px;padding:4px 8px 8px 8px;height:780px;overflow:hidden;"
     >
       <html:div id="lpcteam-sidebar-source" style="
         color:#666;font-size:12px;white-space:pre-wrap;max-height:70px;min-height:22px;
