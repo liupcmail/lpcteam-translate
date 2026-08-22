@@ -239,7 +239,11 @@ function initPanelEvents(body: HTMLElement) {
 function clearPanel() {
   currentSource = "";
   concatBuffer = "";
-  lastSelectionText = "";
+  // treat whatever is still selected on the page as already handled:
+  // do not re-translate it, wait for the NEXT selection
+  lastSelectionText = readCurrentSelection();
+  pendingText = lastSelectionText;
+  pendingStableCount = 2;
   for (const body of findBodies()) {
     const doc = body.ownerDocument;
     if (!doc) {
@@ -333,6 +337,10 @@ export async function startSelectionWatcher() {
         const concatChecked = isConcatChecked();
         if (concatChecked) {
           concatBuffer = concatBuffer ? `${concatBuffer}\n${text}` : text;
+          // re-normalize the joined text so cross-page selections
+          // merge into ONE continuous paragraph instead of staying
+          // two separate blocks
+          concatBuffer = normalizeSelectionText(concatBuffer);
           currentSource = concatBuffer;
         } else {
           concatBuffer = "";
@@ -353,6 +361,34 @@ export async function startSelectionWatcher() {
 
 export function stopSelectionWatcher() {
   polling = false;
+}
+
+
+/**
+ * Read the text currently selected in the active reader tab
+ * (normalized), or "" when nothing is selected.
+ */
+function readCurrentSelection(): string {
+  try {
+    const tabs = ztoolkit.getGlobal("Zotero_Tabs");
+    const reader = Zotero.Reader.getByTabID(tabs.selectedID) as any;
+    const internal = reader?._internalReader;
+    const iframeWin =
+      internal?._primaryView?._iframeWindow ||
+      internal?._lastView?._iframeWindow;
+    let text = "";
+    try {
+      text = iframeWin?.getSelection?.()?.toString() || "";
+    } catch {
+      // selection may be mid-change
+    }
+    if (!text) {
+      text = internal?._lastView?._selectionPopup?.annotation?.text || "";
+    }
+    return normalizeSelectionText(text);
+  } catch {
+    return "";
+  }
 }
 
 function isConcatChecked() {
