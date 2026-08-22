@@ -32,8 +32,13 @@ export function registerSidebarPanel() {
     bodyXHTML: `<html:div
       xmlns:html="http://www.w3.org/1999/xhtml"
       id="lpcteamtranslate-sidebar-body"
-      style="display:flex;flex-direction:column;gap:6px;padding:4px 8px 8px 8px;height:780px;overflow:hidden;"
+      style="display:flex;flex-direction:column;gap:6px;padding:2px 8px 8px 8px;height:780px;overflow:hidden;"
     >
+      <html:div style="display:flex;gap:6px;align-items:center;flex:none;">
+        <html:select id="lpcteam-sidebar-engine" style="flex:1;font-size:12px;"></html:select>
+        <html:button id="lpcteam-sidebar-copy" style="font-size:12px;">${getString("sidebar-copy")}</html:button>
+        <html:button id="lpcteam-sidebar-retranslate" style="font-size:12px;">${getString("sidebar-retranslate")}</html:button>
+      </html:div>
       <html:div id="lpcteam-sidebar-source" style="
         color:#666;font-size:12px;white-space:pre-wrap;max-height:70px;min-height:22px;
         overflow-y:auto;padding:4px 6px;background:rgba(128,128,128,0.08);
@@ -42,11 +47,6 @@ export function registerSidebarPanel() {
         font-size:13px;white-space:pre-wrap;padding:4px 6px;
         border-left:3px solid #38a169;background:rgba(56,161,105,0.06);
         border-radius:2px;flex:1;overflow-y:auto;"></html:div>
-      <html:div style="display:flex;gap:6px;align-items:center;flex:none;">
-        <html:select id="lpcteam-sidebar-engine" style="flex:1;font-size:12px;"></html:select>
-        <html:button id="lpcteam-sidebar-copy" style="font-size:12px;">${getString("sidebar-copy")}</html:button>
-        <html:button id="lpcteam-sidebar-retranslate" style="font-size:12px;">${getString("sidebar-retranslate")}</html:button>
-      </html:div>
     </html:div>`,
     onRender: ({ body }: { body: HTMLElement }) => {
       panelElement = body;
