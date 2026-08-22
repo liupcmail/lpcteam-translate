@@ -10,8 +10,13 @@ import { translateText } from "./translate";
 const PANE_ID = "lpcteamtranslate-section";
 
 let panelElement: HTMLElement | undefined;
-let lastTranslatedText = "";
 let polling = false;
+/** last raw selection seen, for de-duplication */
+let lastSelectionText = "";
+/** accumulated source while concat mode is on */
+let concatBuffer = "";
+/** what is currently shown / translated */
+let currentSource = "";
 
 /**
  * Register the translation panel as a right-sidebar section.
@@ -36,8 +41,10 @@ export function registerSidebarPanel() {
     >
       <html:div style="display:flex;gap:6px;align-items:center;flex:none;">
         <html:select id="lpcteam-sidebar-engine" style="flex:1;font-size:12px;"></html:select>
+        <html:label style="display:flex;align-items:center;gap:3px;font-size:12px;flex:none;">
+          <html:input type="checkbox" id="lpcteam-sidebar-concat"></html:input>${getString("sidebar-concat")}
+        </html:label>
         <html:button id="lpcteam-sidebar-copy" style="font-size:12px;">${getString("sidebar-copy")}</html:button>
-        <html:button id="lpcteam-sidebar-retranslate" style="font-size:12px;">${getString("sidebar-retranslate")}</html:button>
       </html:div>
       <html:div id="lpcteam-sidebar-source" style="
         color:#666;font-size:12px;white-space:pre-wrap;max-height:70px;min-height:22px;
@@ -86,29 +93,32 @@ function initPanelEvents() {
       engine.value = def.name;
     }
     engine.addEventListener("change", () => {
-      // engine changed: retranslate what is shown
+      // engine switched: retranslate what is shown
       retranslate();
     });
   }
+  doc
+    .getElementById("lpcteam-sidebar-concat")
+    ?.addEventListener("change", (e: Event) => {
+      // leaving concat mode resets the buffer
+      if (!(e.target as HTMLInputElement).checked) {
+        concatBuffer = "";
+      }
+    });
   doc.getElementById("lpcteam-sidebar-copy")?.addEventListener("click", () => {
     const text =
       doc.getElementById("lpcteam-sidebar-result")?.textContent || "";
     Zotero.Utilities.Internal.copyTextToClipboard(text);
   });
-  doc
-    .getElementById("lpcteam-sidebar-retranslate")
-    ?.addEventListener("click", () => {
-      retranslate();
-    });
 }
 
 function retranslate() {
-  if (lastTranslatedText) {
+  if (currentSource) {
     const doc = panelElement?.ownerDocument;
     const engine = doc?.getElementById(
       "lpcteam-sidebar-engine",
     ) as HTMLSelectElement;
-    runTranslation(lastTranslatedText, engine?.value);
+    runTranslation(currentSource, engine?.value);
   }
 }
 
@@ -131,7 +141,9 @@ function showSourceOnly(text: string) {
 
 /**
  * Watch the active reader tab for text selection changes and
- * auto-translate into the sidebar panel.
+ * auto-translate into the sidebar panel. With concat mode enabled,
+ * consecutive selections are joined (useful for paragraphs split
+ * across pages) and translated together.
  */
 export async function startSelectionWatcher() {
   if (polling) {
@@ -158,17 +170,21 @@ export async function startSelectionWatcher() {
         text = internal?._lastView?._selectionPopup?.annotation?.text || "";
       }
       text = text.trim();
-      if (
-        text &&
-        text !== lastTranslatedText &&
-        getPref("autoTranslate") !== false
-      ) {
-        lastTranslatedText = text;
-        runTranslation(text);
-      } else if (text && text !== lastTranslatedText) {
-        // auto-translate off: still remember and show the source
-        lastTranslatedText = text;
-        showSourceOnly(text);
+      if (text && text !== lastSelectionText) {
+        lastSelectionText = text;
+        const concatChecked = isConcatChecked();
+        if (concatChecked) {
+          concatBuffer = concatBuffer ? `${concatBuffer}\n${text}` : text;
+          currentSource = concatBuffer;
+        } else {
+          concatBuffer = "";
+          currentSource = text;
+        }
+        if (getPref("autoTranslate") !== false) {
+          runTranslation(currentSource);
+        } else {
+          showSourceOnly(currentSource);
+        }
       }
     } catch {
       // reader internals changed; keep polling
@@ -179,6 +195,14 @@ export async function startSelectionWatcher() {
 
 export function stopSelectionWatcher() {
   polling = false;
+}
+
+function isConcatChecked() {
+  const doc = panelElement?.ownerDocument;
+  const box = doc?.getElementById(
+    "lpcteam-sidebar-concat",
+  ) as HTMLInputElement | null;
+  return !!box?.checked;
 }
 
 async function runTranslation(text: string, engineName?: string) {

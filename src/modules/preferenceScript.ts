@@ -1,13 +1,16 @@
 import { getPref, setPref } from "../utils/prefs";
+import { getString } from "../utils/locale";
 import {
   getCustomEndpoints,
   setEndpoints,
   type EndpointConfig,
 } from "./services";
+import { translateText } from "./translate";
 
 export async function registerPrefsScripts(win: Window) {
   bindSimpleInputs(win);
   bindCheckbox(win);
+  bindCheckbox2(win);
   renderEndpointRows(win);
 }
 
@@ -22,6 +25,38 @@ function bindCheckbox(win: Window) {
   el.addEventListener("command", () => {
     setPref("autoTranslate", el.checked);
   });
+}
+
+function bindCheckbox2(win: Window) {
+  const el = win.document.getElementById(
+    `zotero-prefpane-${addon.data.config.addonRef}-auto-target`,
+  ) as XUL.Checkbox;
+  if (!el) {
+    return;
+  }
+  el.checked = getPref("autoTargetLanguage") !== false;
+  el.addEventListener("command", () => {
+    setPref("autoTargetLanguage", el.checked);
+  });
+}
+
+/**
+ * Test one endpoint with a sample text and report the result inline.
+ */
+async function testEndpoint(
+  endpoint: EndpointConfig,
+  statusEl: HTMLElement,
+) {
+  statusEl.textContent = "…";
+  statusEl.style.color = "#b7791f";
+  try {
+    const result = await translateText("Hello, world!", endpoint);
+    statusEl.textContent = `✓ ${result.slice(0, 40)}`;
+    statusEl.style.color = "#38a169";
+  } catch (e) {
+    statusEl.textContent = `✗ ${e instanceof Error ? e.message : String(e)}`.slice(0, 80);
+    statusEl.style.color = "#c53030";
+  }
 }
 
 function bindSimpleInputs(win: Window) {
@@ -105,6 +140,29 @@ function renderEndpointRows(win: Window) {
       wrap.append(caption, input);
       row.appendChild(wrap);
     }
+    const test = doc.createElement("button");
+    test.textContent = getString("pref-endpoint-test" as never);
+    test.addEventListener("command", () => {
+      // Read the CURRENT input values so unsaved edits are tested too
+      const inputs = Array.from(row.querySelectorAll("input")) as HTMLInputElement[];
+      const values = inputs.map((i) => i.value);
+      testEndpoint(
+        {
+          name: values[0] || "Unnamed",
+          url: values[1],
+          model: values[2],
+          apiKey: values[3],
+          type: "llm",
+        },
+        statusEl,
+      );
+    });
+    row.appendChild(test);
+    const statusEl = doc.createElement("span");
+    statusEl.className = "endpoint-status";
+    statusEl.style.fontSize = "12px";
+    row.appendChild(statusEl);
+
     const del = doc.createElement("button");
     del.textContent = "✕";
     del.className = "endpoint-delete";

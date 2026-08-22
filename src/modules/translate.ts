@@ -4,6 +4,26 @@ import type { EndpointConfig } from "./services";
 export class TranslateError extends Error {}
 
 /**
+ * Resolve the language pair for a text. With auto target language
+ * enabled (default), Chinese text is translated to English and any
+ * other language to the configured target (Chinese by default).
+ */
+function resolveLanguages(text: string): { from: string; to: string } {
+  const from = getPref("sourceLanguage") || "en-US";
+  const to = getPref("targetLanguage") || "zh-CN";
+  if (getPref("autoTargetLanguage") !== false && isChinese(text)) {
+    return { from: "zh-CN", to: "en" };
+  }
+  return { from, to };
+}
+
+function isChinese(text: string): boolean {
+  const cjk = (text.match(/[一-鿿]/g) || []).length;
+  const meaningful = (text.match(/[\p{L}\p{N}]/gu) || []).length;
+  return meaningful > 0 && cjk / meaningful > 0.3;
+}
+
+/**
  * Translate `text` with the given engine.
  *
  * When `onDelta` is provided it is called with each incremental chunk
@@ -18,13 +38,14 @@ export async function translateText(
   if (!endpoint) {
     throw new TranslateError("No endpoint available");
   }
+  const { from, to } = resolveLanguages(text);
   if (endpoint.type === "bing") {
-    return translateBing(text, onDelta);
+    return translateBing(text, from, to, onDelta);
   }
   if (endpoint.type === "google") {
-    return translateGoogle(text, onDelta);
+    return translateGoogle(text, to, onDelta);
   }
-  return translateLLM(text, endpoint, onDelta);
+  return translateLLM(text, endpoint, from, to, onDelta);
 }
 
 /**
@@ -33,10 +54,10 @@ export async function translateText(
  */
 async function translateBing(
   text: string,
+  from: string,
+  to: string,
   onDelta?: (delta: string, full: string) => void,
 ): Promise<string> {
-  const from = getPref("sourceLanguage") || "en";
-  const to = getPref("targetLanguage") || "zh-CN";
   const xhr = await Zotero.HTTP.request(
     "POST",
     `https://edge.microsoft.com/translate/translatetext?from=${from}&to=${to}&isEnterpriseClient=false`,
@@ -67,9 +88,9 @@ async function translateBing(
  */
 async function translateGoogle(
   text: string,
+  to: string,
   onDelta?: (delta: string, full: string) => void,
 ): Promise<string> {
-  const to = getPref("targetLanguage") || "zh-CN";
   const url =
     "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto" +
     `&tl=${encodeURIComponent(to)}&dt=t&q=${encodeURIComponent(text)}`;
@@ -96,6 +117,8 @@ async function translateGoogle(
 async function translateLLM(
   text: string,
   endpoint: EndpointConfig,
+  from: string,
+  to: string,
   onDelta?: (delta: string, full: string) => void,
 ): Promise<string> {
   if (!endpoint.apiKey) {
@@ -104,8 +127,8 @@ async function translateLLM(
     );
   }
 
-  const langFrom = getPref("sourceLanguage") || "en-US";
-  const langTo = getPref("targetLanguage") || "zh-CN";
+  const langFrom = from;
+  const langTo = to;
   const prompt = (getPref("prompt") || "")
     .replaceAll("${langFrom}", langFrom)
     .replaceAll("${langTo}", langTo)

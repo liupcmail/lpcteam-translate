@@ -2,6 +2,7 @@ pref("sourceLanguage", "en-US");
 pref("targetLanguage", "zh-CN");
 pref("stream", true);
 pref("autoTranslate", true);
+pref("autoTargetLanguage", true);
 pref(
   "prompt",
   "You are a professional academic translator. Translate the following text from ${langFrom} to ${langTo}. Keep technical terminology accurate and preserve the original paragraph structure. Output ONLY the translation, without any explanations or the original text.\n\n${sourceText}",

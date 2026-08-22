@@ -1,6 +1,9 @@
 pref-title = lpcteam-translate Settings
 pref-auto-translate =
     .label = Auto-translate on text selection
+pref-auto-target =
+    .label = Auto target language (Chinese → English, other languages → Chinese)
+pref-endpoint-test = Test
 pref-source-language = Source language
 pref-target-language = Target language
 pref-prompt = Translation prompt (placeholders: ${langFrom}, ${langTo}, ${sourceText})

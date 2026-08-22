@@ -1,6 +1,9 @@
 pref-title = lpcteam-translate 设置
 pref-auto-translate =
     .label = 选中文字后自动翻译
+pref-auto-target =
+    .label = 自动目标语言（中文译为英文，其他语言译为中文）
+pref-endpoint-test = 测试
 pref-source-language = 源语言
 pref-target-language = 目标语言
 pref-prompt = 翻译提示词（可用占位符：${langFrom}、${langTo}、${sourceText}）
