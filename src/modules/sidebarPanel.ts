@@ -8,11 +8,14 @@ import {
 import { translateText } from "./translate";
 
 const PANE_ID = "lpcteamtranslate-section";
+const BODY_ID = "lpcteamtranslate-sidebar-body";
 
-let panelElement: HTMLElement | undefined;
 let polling = false;
 /** last raw selection seen, for de-duplication */
 let lastSelectionText = "";
+/** selection waiting to settle (same text across polls) */
+let pendingText = "";
+let pendingStableCount = 0;
 /** accumulated source while concat mode is on */
 let concatBuffer = "";
 /** what is currently shown / translated */
@@ -36,7 +39,7 @@ export function registerSidebarPanel() {
     },
     bodyXHTML: `<html:div
       xmlns:html="http://www.w3.org/1999/xhtml"
-      id="lpcteamtranslate-sidebar-body"
+      id="${BODY_ID}"
       style="display:flex;flex-direction:column;gap:6px;padding:2px 8px 8px 8px;height:780px;overflow:hidden;"
     >
       <html:div style="display:flex;gap:6px;align-items:center;flex:none;">
@@ -56,11 +59,7 @@ export function registerSidebarPanel() {
         border-radius:2px;flex:1;overflow-y:auto;"></html:div>
     </html:div>`,
     onRender: ({ body }: { body: HTMLElement }) => {
-      panelElement = body;
-      initPanelEvents();
-    },
-    onDestroy: () => {
-      panelElement = undefined;
+      initPanelEvents(body);
     },
   });
 }
@@ -73,15 +72,35 @@ export function unregisterSidebarPanel() {
   }
 }
 
-function initPanelEvents() {
-  if (!panelElement?.ownerDocument) {
+/**
+ * Find the sidebar body that currently lives in a Zotero window.
+ * Sections are re-created when tabs/documents change, so the element
+ * must be resolved at use time instead of being cached.
+ */
+function findBody(): HTMLElement | undefined {
+  for (const win of Zotero.getMainWindows()) {
+    const el = (win as unknown as Window).document?.getElementById(BODY_ID);
+    if (el) {
+      return el as HTMLElement;
+    }
+  }
+  return undefined;
+}
+
+function initPanelEvents(body: HTMLElement) {
+  if ((body as any)._lpcteamInited) {
     return;
   }
-  const doc = panelElement.ownerDocument;
+  (body as any)._lpcteamInited = true;
+  const doc = body.ownerDocument;
+  if (!doc) {
+    return;
+  }
+
   const engine = doc.getElementById(
     "lpcteam-sidebar-engine",
   ) as HTMLSelectElement;
-  if (engine && engine.options.length === 0) {
+  if (engine) {
     for (const ep of getEndpoints()) {
       const opt = doc.createElement("option");
       opt.value = ep.name;
@@ -100,8 +119,12 @@ function initPanelEvents() {
   doc
     .getElementById("lpcteam-sidebar-concat")
     ?.addEventListener("change", (e: Event) => {
-      // leaving concat mode resets the buffer
-      if (!(e.target as HTMLInputElement).checked) {
+      if ((e.target as HTMLInputElement).checked) {
+        // entering concat mode: the text currently shown becomes the
+        // first part of the concatenation
+        concatBuffer = currentSource || concatBuffer;
+      } else {
+        // leaving concat mode resets the buffer
         concatBuffer = "";
       }
     });
@@ -114,7 +137,7 @@ function initPanelEvents() {
 
 function retranslate() {
   if (currentSource) {
-    const doc = panelElement?.ownerDocument;
+    const doc = findBody()?.ownerDocument;
     const engine = doc?.getElementById(
       "lpcteam-sidebar-engine",
     ) as HTMLSelectElement;
@@ -123,7 +146,7 @@ function retranslate() {
 }
 
 function showSourceOnly(text: string) {
-  const doc = panelElement?.ownerDocument;
+  const doc = findBody()?.ownerDocument;
   const sourceEl = doc?.getElementById(
     "lpcteam-sidebar-source",
   ) as HTMLElement | null;
@@ -170,7 +193,17 @@ export async function startSelectionWatcher() {
         text = internal?._lastView?._selectionPopup?.annotation?.text || "";
       }
       text = text.trim();
-      if (text && text !== lastSelectionText) {
+      // Wait until the selection has settled (unchanged across two
+      // polls, ~1.2s): during a drag, every intermediate state is a
+      // different text and must not be translated or concatenated.
+      if (text && text === pendingText) {
+        pendingStableCount++;
+      } else {
+        pendingText = text;
+        pendingStableCount = 1;
+      }
+      const settled = text && pendingStableCount >= 2;
+      if (settled && text !== lastSelectionText) {
         lastSelectionText = text;
         const concatChecked = isConcatChecked();
         if (concatChecked) {
@@ -198,7 +231,7 @@ export function stopSelectionWatcher() {
 }
 
 function isConcatChecked() {
-  const doc = panelElement?.ownerDocument;
+  const doc = findBody()?.ownerDocument;
   const box = doc?.getElementById(
     "lpcteam-sidebar-concat",
   ) as HTMLInputElement | null;
@@ -206,7 +239,7 @@ function isConcatChecked() {
 }
 
 async function runTranslation(text: string, engineName?: string) {
-  const doc = panelElement?.ownerDocument;
+  const doc = findBody()?.ownerDocument;
   const sourceEl = doc?.getElementById(
     "lpcteam-sidebar-source",
   ) as HTMLElement | null;
