@@ -106,33 +106,75 @@ async function translateBing(
 /**
  * Free Google translate web endpoint. Auto-detects the source
  * language.
+ *
+ * The canonical googleapis endpoint rate-limits shared proxy exit
+ * IPs (HTTP 429 with Google's "automated queries" page), so the
+ * clients5 dictionary endpoint is tried as a fallback before
+ * giving up.
  */
 async function translateGoogle(
   text: string,
   to: string,
   onDelta?: (delta: string, full: string) => void,
 ): Promise<string> {
-  const url =
-    "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto" +
-    `&tl=${encodeURIComponent(to)}&dt=t&q=${encodeURIComponent(text)}`;
-  const xhr = await Zotero.HTTP.request("GET", url, {
-    responseType: "json",
-  });
-  if (xhr.status !== 200) {
-    throw new TranslateError(`Google HTTP ${xhr.status}`);
+  const endpoints: Array<[string, (body: string) => string]> = [
+    [
+      "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto" +
+        `&tl=${encodeURIComponent(to)}&dt=t&q=${encodeURIComponent(text)}`,
+      parseGoogleapisBody,
+    ],
+    [
+      "https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=auto" +
+        `&tl=${encodeURIComponent(to)}&q=${encodeURIComponent(text)}`,
+      parseClients5Body,
+    ],
+  ];
+  let lastError: unknown;
+  for (const [url, parse] of endpoints) {
+    try {
+      // successCodes:false — non-2xx statuses must resolve here (not
+      // reject) so the fallback endpoint still gets a chance
+      const xhr = await Zotero.HTTP.request("GET", url, {
+        responseType: "text",
+        successCodes: false,
+      });
+      if (xhr.status !== 200) {
+        throw new TranslateError(`Google HTTP ${xhr.status}`);
+      }
+      const result = parse(xhr.responseText || "");
+      if (!result) {
+        throw new TranslateError("Google returned an empty translation");
+      }
+      onDelta?.(result, result);
+      return result;
+    } catch (e) {
+      lastError = e;
+    }
   }
-  const segments = (xhr.response as any)?.[0];
+  throw lastError instanceof Error
+    ? lastError
+    : new TranslateError("Google translation failed");
+}
+
+/** googleapis: [[["seg","orig",...],...], ...] */
+function parseGoogleapisBody(body: string): string {
+  const segments = JSON.parse(body)?.[0];
   let result = "";
   if (Array.isArray(segments)) {
     for (const seg of segments) {
       result += seg?.[0] || "";
     }
   }
-  if (!result) {
-    throw new TranslateError("Google returned an empty translation");
-  }
-  onDelta?.(result, result);
   return result;
+}
+
+/** clients5: [["translation","detectedLang"]] */
+function parseClients5Body(body: string): string {
+  const first = JSON.parse(body)?.[0];
+  if (Array.isArray(first)) {
+    return String(first[0] || "");
+  }
+  return typeof first === "string" ? first : "";
 }
 
 async function translateLLM(
